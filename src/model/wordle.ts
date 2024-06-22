@@ -104,7 +104,7 @@ export class Wordle {
    *   - if the user deletes a letter we decrease indexCell
    *   - if the user writes the last letter of the current row,
    *     we reset indexCell to 0 and increase indexRow
-   * @param isIncreasing Indicates if is adding a letter   *
+   * @param isIncreasing Indicates if is adding a letter
    */
   private updateIndexes = (
     isIncreasing: boolean,
@@ -130,10 +130,22 @@ export class Wordle {
     }
   };
 
+  /**
+   * @function writeMessage
+   * This function put a message in the message container
+   * @param {string} text message to show
+   */
   private writeMessage = (text: string) => {
     this.wordleMessage!.textContent = text;
   };
 
+  /**
+   * @function changeColors
+   * This function added class to each cell indicate the validation of the letter
+   * - `letter-yellow`: The letter is not in the right position
+   * - `letter-grey`: The letter is not inclided in the word
+   * - `letter-green`: The letter is in the right position
+   */
   private changeColors = () => {
     for (let index = 0; index < this.indexCell; index++) {
       let letterColor = "letter-yellow";
@@ -154,6 +166,31 @@ export class Wordle {
       element.classList.add(letterColor);
     }
     this.writeMessage("¡Te faltan algunas letras!");
+  };
+
+  /**
+   *  @function validateResultGame
+   * Indicate if the game is finished or will continue
+   * @returns {boolean} true if the game finished, otherwise will be false.
+   */
+  private validateResultGame = () => {
+    const userWord = this.getUserAnswer();
+
+    if (userWord === this.rightWord) {
+      this.winnigGame;
+      return true;
+    }
+
+    if (this.indexRow > this.rows) {
+      this.failGame();
+      return true;
+    }
+
+    if (this.indexRow === this.rows) {
+      this.writeMessage(`Último intento 👀`);
+    }
+
+    return false;
   };
 
   /**
@@ -197,19 +234,29 @@ export class Wordle {
   /**
    * @function getUserAnswer
    * This function returns the word of user types.
-   * @returns the word the user types
+   * @returns {string} the word the user types
    */
   public getUserAnswer = () => this.userAnswer.join("");
 
+  /**
+   * @function getRestartButton
+   * This function returns the restart button reference
+   * @returns {HTMLButtonElement} Restart button
+   */
   public getRestartButton = () => this.wordleResetBtn as HTMLButtonElement;
 
+  /**
+   *  @function disabledRestartButton
+   * This function can enable or disabled the restart button
+   * @param disabled indicate if the restart button will be enable or disabkle
+   */
   public disabledRestartButton = (disabled: boolean) => {
-    this.wordleResetBtn!.disabled = disabled;
+    this.getRestartButton().disabled = disabled;
   };
 
   /**
    * @method winnigGame
-   * Marked the current row as the correct word
+   * The user finds the correct word
    */
   public winnigGame = () => {
     const currentRow = this.wordleRows[this.indexRow];
@@ -229,26 +276,11 @@ export class Wordle {
     );
   };
 
-  private validateResultGame = () => {
-    const userWord = this.getUserAnswer();
-
-    if (userWord === this.rightWord) {
-      this.winnigGame;
-      return true;
-    }
-
-    if (this.indexRow > this.rows) {
-      this.failGame();
-      return true;
-    }
-
-    if (this.indexRow === this.rows) {
-      this.writeMessage(`Último intento 👀`);
-    }
-
-    return false;
-  };
-
+  /**
+   * @function checkWord
+   * This function validate if the user finish the game or not
+   * @returns {boolean} indicate if the user finish the game
+   */
   public checkWord = () => {
     const left = this.rightWord.length - this.userAnswer.length;
 
@@ -265,6 +297,10 @@ export class Wordle {
     return this.validateResultGame();
   };
 
+  /**
+   * @function restartGame
+   *  This function restart the game.
+   */
   public restartGame = () => {
     this.disabledRestartButton(true);
     this.wordleConatiner!.innerHTML = "";
