@@ -67,6 +67,12 @@ body {
   border: 0.1rem solid var(--yellow);
 }
 
+.letter-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .message-container {
   display: flex;
   align-items: center;
@@ -74,11 +80,6 @@ body {
   font-size: 1.3rem;
 }
 
-.letter-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 
 .message-text {
   color: white;

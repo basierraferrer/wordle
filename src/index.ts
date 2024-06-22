@@ -1,13 +1,7 @@
-import { Subject, fromEvent } from "rxjs";
+import { Subject, fromEvent, merge, takeUntil } from "rxjs";
 import { Wordle } from "./model/wordle";
-import WORD_LIST from "./wordList.json";
 
 const wordleGame = new Wordle(5, 6, document);
-
-const getRamdonWord = () =>
-  WORD_LIST[Math.round(Math.random() * WORD_LIST.length)];
-
-const rightWord = getRamdonWord();
 
 /**
  * ---------------------
@@ -44,16 +38,14 @@ const checkWord = {
   next: (event: KeyboardEvent) => {
     const keyPressed = event.key.toUpperCase();
     if (keyPressed === "ENTER") {
-      if (wordleGame.checkWord(rightWord)) {
-        userResult$.next("");
-      }
+      if (wordleGame.checkWord()) userResult$.next("");
     }
   },
 };
 
-const winnigGame = {
+const resultGame = {
   next: () => {
-    wordleGame.winnigGame();
+    wordleGame.disabledRestartButton(false);
   },
 };
 
@@ -63,8 +55,16 @@ const winnigGame = {
  * -------------------------
  */
 
-onKeyDown$.subscribe(insertLetter);
-onKeyDown$.subscribe(deleteLetter);
-onKeyDown$.subscribe(checkWord);
+const onLoadWindow$ = fromEvent(window, "load");
+const onRestartButton$ = fromEvent(wordleGame.getRestartButton(), "click");
 
-userResult$.subscribe(winnigGame);
+const restartGame$ = merge(onLoadWindow$, onRestartButton$);
+
+restartGame$.subscribe(() => {
+  wordleGame.restartGame();
+});
+
+userResult$.subscribe(resultGame);
+onKeyDown$.pipe(takeUntil(userResult$)).subscribe(insertLetter);
+onKeyDown$.pipe(takeUntil(userResult$)).subscribe(deleteLetter);
+onKeyDown$.pipe(takeUntil(userResult$)).subscribe(checkWord);

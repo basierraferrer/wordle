@@ -1,4 +1,7 @@
-import { RegularExpressionLiteral } from "typescript";
+import WORD_LIST from "../wordList.json";
+
+const getRamdonWord = () =>
+  WORD_LIST[Math.round(Math.random() * WORD_LIST.length)];
 
 export class Wordle {
   wordleRows: Array<Element>;
@@ -10,6 +13,7 @@ export class Wordle {
   userAnswer: string[];
   document: Document;
   regExp: RegExp;
+  rightWord: string;
 
   constructor(private cells: number, private rows: number, document: Document) {
     // It's becase the index start form 0
@@ -31,6 +35,7 @@ export class Wordle {
     // added click listener
     this.wordleResetBtn.addEventListener("click", this.restartGame);
     // create game
+    this.rightWord = "";
     this.createGameBoard();
   }
 
@@ -63,6 +68,7 @@ export class Wordle {
    */
   private createGameBoard = () => {
     if (this.wordleConatiner) {
+      this.rightWord = getRamdonWord();
       for (
         let indexLetterRow = 0;
         indexLetterRow <= this.rows;
@@ -104,9 +110,10 @@ export class Wordle {
     isIncreasing: boolean,
     needReset?: boolean
   ): void => {
-    const shouldReset = this.indexCell > this.cells;
+    const shouldReset =
+      this.indexCell > this.cells && isIncreasing && needReset;
 
-    if (shouldReset || needReset) {
+    if (shouldReset) {
       this.indexCell = 0;
       this.indexRow++;
       this.userAnswer = [];
@@ -127,18 +134,13 @@ export class Wordle {
     this.wordleMessage!.textContent = text;
   };
 
-  private changeColors = (rigthWord: string) => {
+  private changeColors = () => {
     for (let index = 0; index < this.indexCell; index++) {
       let letterColor = "letter-yellow";
       const element = this.wordleRows[this.indexRow].children[index];
-      console.log("file: wordle.ts:114 ~ Wordle ~ element:", element);
 
-      const letterPosition = Array.from(rigthWord).indexOf(
+      const letterPosition = Array.from(this.rightWord).indexOf(
         this.userAnswer[index]
-      );
-      console.log(
-        "file: wordle.ts:118 ~ Wordle ~ letterPosition:",
-        letterPosition
       );
 
       if (letterPosition === -1) {
@@ -184,7 +186,8 @@ export class Wordle {
    * Removes a letter of the current row
    */
   public deleteLetter = () => {
-    const letterBox = this.wordleRows[this.indexRow].children[this.indexCell];
+    const letterBox =
+      this.wordleRows[this.indexRow].children[this.indexCell - 1];
     letterBox.textContent = "";
     letterBox.classList.remove("filled-letter");
     this.userAnswer.pop();
@@ -198,6 +201,12 @@ export class Wordle {
    */
   public getUserAnswer = () => this.userAnswer.join("");
 
+  public getRestartButton = () => this.wordleResetBtn as HTMLButtonElement;
+
+  public disabledRestartButton = (disabled: boolean) => {
+    this.wordleResetBtn!.disabled = disabled;
+  };
+
   /**
    * @method winnigGame
    * Marked the current row as the correct word
@@ -207,32 +216,57 @@ export class Wordle {
     for (let index = 0; index <= this.cells; index++) {
       currentRow.children[index].classList.add("letter-green");
     }
-    this.wordleResetBtn!.disabled = false;
+    this.writeMessage(`🎉 ¡Sí! La palabra ${this.rightWord} es la correcta 🎉`);
   };
 
-  public checkWord = (rigthWord: string) => {
-    const userWord = this.userAnswer.join("");
-    if (userWord === rigthWord) {
+  /**
+   * @method failGame
+   * the user didn't catch the word
+   */
+  public failGame = () => {
+    this.writeMessage(
+      `¡Perdiste! 😔 La palabra correcta era ${this.rightWord}`
+    );
+  };
+
+  private validateResultGame = () => {
+    const userWord = this.getUserAnswer();
+
+    if (userWord === this.rightWord) {
+      this.winnigGame;
       return true;
     }
 
-    if (this.userAnswer.length === rigthWord.length) {
-      this.changeColors(rigthWord);
-      this.updateIndexes(true, true);
-      return false;
+    if (this.indexRow > this.rows) {
+      this.failGame();
+      return true;
     }
 
-    const left = rigthWord.length - this.userAnswer.length;
-
-    this.writeMessage(
-      `Te falta${left > 1 ? "n" : ""} ${left} letra${left > 1 ? "s" : ""}`
-    );
+    if (this.indexRow === this.rows) {
+      this.writeMessage(`Último intento 👀`);
+    }
 
     return false;
   };
 
+  public checkWord = () => {
+    const left = this.rightWord.length - this.userAnswer.length;
+
+    if (left) {
+      this.writeMessage(
+        `Te falta${left > 1 ? "n" : ""} ${left} letra${left > 1 ? "s" : ""}`
+      );
+      return false;
+    }
+
+    this.changeColors();
+    this.updateIndexes(true, true);
+
+    return this.validateResultGame();
+  };
+
   public restartGame = () => {
-    this.wordleResetBtn!.disabled = true;
+    this.disabledRestartButton(true);
     this.wordleConatiner!.innerHTML = "";
     this.wordleMessage!.textContent = "";
     this.initialValues();
